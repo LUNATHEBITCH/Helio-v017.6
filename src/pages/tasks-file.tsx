@@ -42,6 +42,11 @@ const Tasks = () => {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState('');
+  const [editDate, setEditDate] = useState<Date | undefined>();
 
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -141,6 +146,53 @@ const Tasks = () => {
   };
 
   const handleEditTask = (taskId: string) => {
+    const taskToEdit = tasks.find(t => t.id === taskId);
+    if (taskToEdit) {
+      setEditingTaskId(taskId);
+      setEditTitle(taskToEdit.title);
+      setEditDescription(taskToEdit.description);
+      setEditPriority(taskToEdit.priority);
+      setEditDate(new Date(taskToEdit.dueDate));
+    }
+    setContextMenu(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (editTitle.trim() && editingTaskId) {
+      const updatedTasks = tasks.map(task =>
+        task.id === editingTaskId
+          ? {
+              ...task,
+              title: editTitle.trim(),
+              description: editDescription.trim(),
+              priority: editPriority,
+              dueDate: editDate ? editDate.toLocaleDateString() : task.dueDate
+            }
+          : task
+      );
+      setTasks(updatedTasks);
+      localStorage.setItem('kario-tasks', JSON.stringify(updatedTasks));
+      setEditingTaskId(null);
+      setEditTitle('');
+      setEditDescription('');
+      setEditPriority('');
+      setEditDate(undefined);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTaskId(null);
+    setEditTitle('');
+    setEditDescription('');
+    setEditPriority('');
+    setEditDate(undefined);
+  };
+
+  const handleOpenTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      handleEditTask(taskId);
+    }
     setContextMenu(null);
   };
 
@@ -327,16 +379,20 @@ const Tasks = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-gray-300">
-                            <TooltipProvider delayDuration={100}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="truncate max-w-[150px] block">{task.description || 'No description'}</span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="bg-[#1f1f1f] text-white rounded-xl border-0">
-                                  <p className="max-w-sm">{task.description || 'No description'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            {task.description ? (
+                              <TooltipProvider delayDuration={100}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate max-w-[150px] block cursor-help">{task.description}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="bg-[#1f1f1f] text-white rounded-xl border-0">
+                                    <p className="max-w-sm">{task.description}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="text-gray-500 italic">No description</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-white">{task.creationDate}</TableCell>
                           <TableCell>
@@ -495,6 +551,13 @@ const Tasks = () => {
         >
           <button
             className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white transition-all text-sm my-1 rounded-xl hover:border hover:border-[#3b3a3a] hover:bg-[#1f1f1f]"
+            onClick={() => handleOpenTask(contextMenu.taskId)}
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span>Open</span>
+          </button>
+          <button
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-white transition-all text-sm my-1 rounded-xl hover:border hover:border-[#3b3a3a] hover:bg-[#1f1f1f]"
             onClick={() => handleEditTask(contextMenu.taskId)}
           >
             <Edit className="w-4 h-4" />
@@ -507,6 +570,81 @@ const Tasks = () => {
             <Trash2 className="w-4 h-4" />
             <span>Delete</span>
           </button>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {editingTaskId && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" onClick={handleCancelEdit}>
+          <div
+            className="bg-[#1b1b1b] border border-[#525252] rounded-[20px] p-6 w-full max-w-[500px] max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-white text-xl font-semibold mb-4">Edit Task</h2>
+
+            {/* Title */}
+            <div className="mb-4">
+              <label className="text-gray-400 text-sm mb-2 block">Title</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Task title"
+                className="w-full bg-[#252525] border-[#414141] text-white placeholder-gray-400 focus:ring-0 focus:border-[#414141]"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="mb-4">
+              <label className="text-gray-400 text-sm mb-2 block">Description</label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Task description"
+                className="w-full bg-[#252525] border border-[#414141] text-white placeholder-gray-400 focus:ring-0 p-3 resize-none min-h-[100px] rounded-lg outline-none text-sm"
+              />
+            </div>
+
+            {/* Priority */}
+            <div className="mb-4">
+              <label className="text-gray-400 text-sm mb-2 block">Priority</label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value)}
+                className="w-full bg-[#252525] border border-[#414141] text-white focus:ring-0 p-2 rounded-lg outline-none text-sm"
+              >
+                <option value="Priority 1">Priority 1</option>
+                <option value="Priority 2">Priority 2</option>
+                <option value="Priority 3">Priority 3</option>
+                <option value="Priority 4">Priority 4</option>
+                <option value="Priority 5">Priority 5</option>
+                <option value="Priority 6">Priority 6</option>
+              </select>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-2 justify-end">
+              <Button
+                onClick={handleCancelEdit}
+                variant="ghost"
+                size="sm"
+                className="border border-[#690707] rounded-[10px] bg-[#391e1e] text-[crimson] hover:bg-[#391e1e] hover:text-[crimson]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                size="sm"
+                disabled={!editTitle.trim()}
+                className={`border rounded-[14px] transition-all ${
+                  editTitle.trim()
+                    ? 'border-[#252232] bg-white text-[#252232] hover:bg-white hover:text-[#252232]'
+                    : 'border-[#3a3a3a] bg-[#2a2a2a] text-[#5a5a5a] cursor-not-allowed'
+                }`}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
