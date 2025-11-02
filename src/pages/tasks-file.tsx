@@ -14,8 +14,8 @@ interface Task {
   title: string;
   completed: boolean;
   creationDate: string;
-  dueDate: string;
-  time: string;
+  dueDate?: string;
+  time?: string;
   priority: string;
   description: string;
   reminder?: string;
@@ -93,8 +93,8 @@ const Tasks = () => {
         title: newTaskTitle.trim(),
         completed: false,
         creationDate: currentDate.toLocaleDateString(),
-        dueDate: selectedDate ? selectedDate.toLocaleDateString() : new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        time: selectedTime || currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        dueDate: selectedDate ? selectedDate.toLocaleDateString() : undefined,
+        time: selectedTime ? selectedTime : undefined,
         priority: selectedPriority,
         description: newTaskDescription.trim(),
         reminder: selectedReminder,
@@ -364,10 +364,12 @@ const Tasks = () => {
                       {/* Bottom row: Date/Time tag, Priority, Reminder */}
                       <div className="ml-6 flex items-center gap-2 flex-wrap">
                         {/* Date and Time Tag */}
-                        {task.dueDate && (
+                        {(task.dueDate || task.time) && (
                           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full text-xs text-gray-300">
                             <Calendar className="h-3 w-3" />
-                            <span>{task.dueDate} {task.time ? task.time : ''}</span>
+                            <span>
+                              {task.dueDate && task.time ? `${task.dueDate} ${task.time}` : task.dueDate || task.time}
+                            </span>
                           </div>
                         )}
 
@@ -377,6 +379,7 @@ const Tasks = () => {
                           return (
                             <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${style.bg} ${style.text}`}>
                               <Flag className={`h-3 w-3 ${style.text}`} />
+                              <span>{task.priority}</span>
                             </span>
                           );
                         })()}
