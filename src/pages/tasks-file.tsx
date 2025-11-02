@@ -4,7 +4,7 @@ import DateSelector from '@/components/tasks/DateSelector';
 import PrioritySelector from '@/components/tasks/PrioritySelector';
 import ReminderSelector from '@/components/tasks/ReminderSelector';
 import LabelSelector from '@/components/tasks/LabelSelector';
-import { Plus, ChevronRight, MoveVertical as MoreVertical, Calendar, Flag, Bell, Tag, Link, Edit, Trash2 } from 'lucide-react';
+import { Plus, ChevronRight, MoveVertical as MoreVertical, Calendar, Flag, Bell, Tag, Link, Edit, Trash2, Clock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,9 @@ const Tasks = () => {
   const [editPriority, setEditPriority] = useState('');
   const [editDate, setEditDate] = useState<Date | undefined>();
   const [labelsPopupTaskId, setLabelsPopupTaskId] = useState<string | null>(null);
-  const [labelsPopupPosition, setLabelsPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [remindersPopupTaskId, setRemindersPopupTaskId] = useState<string | null>(null);
+  const [datePopupTaskId, setDatePopupTaskId] = useState<string | null>(null);
+  const [priorityPopupTaskId, setPriorityPopupTaskId] = useState<string | null>(null);
 
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -225,7 +227,9 @@ const Tasks = () => {
     const handleClick = () => {
       setContextMenu(null);
       setLabelsPopupTaskId(null);
-      setLabelsPopupPosition(null);
+      setRemindersPopupTaskId(null);
+      setDatePopupTaskId(null);
+      setPriorityPopupTaskId(null);
     };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
@@ -334,7 +338,6 @@ const Tasks = () => {
                       } ${
                         dragOverTaskId === task.id ? 'border border-blue-500' : ''
                       }`}
-                      onClick={() => handleToggleTask(task.id)}
                       onContextMenu={(e) => handleContextMenu(e, task.id)}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task.id)}
@@ -395,31 +398,79 @@ const Tasks = () => {
                       <div className="ml-6 flex items-center gap-2 flex-wrap">
                         {/* Date and Time Tag */}
                         {(task.dueDate || task.time) && (
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full text-xs text-gray-300">
-                            <Calendar className="h-3 w-3" />
-                            <span>
-                              {task.dueDate && task.time ? `${task.dueDate} ${task.time}` : task.dueDate || task.time}
-                            </span>
-                          </div>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDatePopupTaskId(task.id);
+                                  }}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full text-xs text-gray-300 hover:border-[#525252] transition-all duration-200 cursor-pointer"
+                                >
+                                  <Calendar className="h-3 w-3" />
+                                  <span>
+                                    {task.dueDate && task.time ? `${task.dueDate} ${task.time}` : task.dueDate || task.time}
+                                  </span>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border border-[#414141] z-50 p-2">
+                                <div className="flex flex-col gap-1">
+                                  {task.dueDate && <div className="text-xs">Date: {task.dueDate}</div>}
+                                  {task.time && <div className="text-xs">Time: {task.time}</div>}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
 
                         {/* Priority Badge */}
                         {(() => {
                           const style = getPriorityStyle(task.priority);
                           return (
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${style.bg} ${style.text}`}>
-                              <Flag className={`h-3 w-3 ${style.text}`} />
-                              <span>{task.priority}</span>
-                            </span>
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPriorityPopupTaskId(task.id);
+                                    }}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${style.bg} ${style.text} hover:opacity-80 transition-all duration-200 cursor-pointer`}
+                                  >
+                                    <Flag className={`h-3 w-3 ${style.text}`} />
+                                    <span>{task.priority}</span>
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border border-[#414141] z-50 p-2">
+                                  <div className="text-xs">Priority: {task.priority}</div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           );
                         })()}
 
                         {/* Reminder Indicator */}
                         {task.reminder && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full">
-                            <Bell className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-300">{task.reminder}</span>
-                          </div>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRemindersPopupTaskId(task.id);
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full hover:border-[#525252] transition-all duration-200 cursor-pointer"
+                                >
+                                  <Bell className="h-3 w-3 text-gray-400" />
+                                  <span className="text-xs text-gray-300">{task.reminder}</span>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border border-[#414141] z-50 p-2">
+                                <div className="text-xs">Reminder: {task.reminder}</div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
 
                         {/* Labels - Consolidated into single button */}
@@ -449,7 +500,7 @@ const Tasks = () => {
                                   {task.labels.map((label, index) => (
                                     <div key={index} className="flex items-center gap-2">
                                       <Tag className={`h-3 w-3 ${getLabelColor(label)}`} />
-                                      <span className="text-xs">{label}</span>
+                                      <span className="text-xs">{label.startsWith('#') ? label : `#${label}`}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -687,25 +738,94 @@ const Tasks = () => {
         </div>
       )}
 
-      {/* Labels Popup Modal */}
-      {labelsPopupTaskId && labelsPopupPosition && (() => {
+      {/* Labels Popup */}
+      {labelsPopupTaskId && (() => {
         const task = tasks.find(t => t.id === labelsPopupTaskId);
         return task?.labels && task.labels.length > 0 ? (
           <div
             className="fixed bg-[#1f1f1f] border border-[#414141] rounded-[16px] p-4 z-50 shadow-xl"
-            style={{
-              left: `${labelsPopupPosition.x}px`,
-              top: `${labelsPopupPosition.y}px`,
-            }}
+            style={{ minWidth: '200px' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col gap-3">
               {task.labels.map((label, index) => (
                 <div key={index} className="flex items-center gap-3 px-3 py-2 bg-[#252527] border border-[#414141] rounded-[10px]">
                   <Tag className={`h-5 w-5 ${getLabelColor(label)}`} />
-                  <span className="text-sm text-white">{label}</span>
+                  <span className="text-sm text-white">{label.startsWith('#') ? label : `#${label}`}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* Reminders Popup */}
+      {remindersPopupTaskId && (() => {
+        const task = tasks.find(t => t.id === remindersPopupTaskId);
+        return task?.reminder ? (
+          <div
+            className="fixed bg-[#1f1f1f] border border-[#414141] rounded-[16px] p-4 z-50 shadow-xl"
+            style={{ minWidth: '220px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 px-3 py-2 bg-[#252527] border border-[#414141] rounded-[10px]">
+                <Bell className="h-5 w-5 text-gray-400" />
+                <span className="text-sm text-white">{task.reminder}</span>
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* Date & Time Popup */}
+      {datePopupTaskId && (() => {
+        const task = tasks.find(t => t.id === datePopupTaskId);
+        return (task?.dueDate || task?.time) ? (
+          <div
+            className="fixed bg-[#1f1f1f] border border-[#414141] rounded-[16px] p-4 z-50 shadow-xl"
+            style={{ minWidth: '220px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-3">
+              {task.dueDate && (
+                <div className="flex items-center gap-3 px-3 py-2 bg-[#252527] border border-[#414141] rounded-[10px]">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-400">Date</span>
+                    <span className="text-sm text-white">{task.dueDate}</span>
+                  </div>
+                </div>
+              )}
+              {task.time && (
+                <div className="flex items-center gap-3 px-3 py-2 bg-[#252527] border border-[#414141] rounded-[10px]">
+                  <Clock className="h-5 w-5 text-gray-400" />
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-400">Time</span>
+                    <span className="text-sm text-white">{task.time}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* Priority Popup */}
+      {priorityPopupTaskId && (() => {
+        const task = tasks.find(t => t.id === priorityPopupTaskId);
+        const style = getPriorityStyle(task?.priority || 'Priority 3');
+        return task ? (
+          <div
+            className="fixed bg-[#1f1f1f] border border-[#414141] rounded-[16px] p-4 z-50 shadow-xl"
+            style={{ minWidth: '200px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-3">
+              <div className={`flex items-center gap-3 px-3 py-2 bg-[#252527] border border-[#414141] rounded-[10px]`}>
+                <Flag className={`h-5 w-5 ${style.text}`} />
+                <span className={`text-sm ${style.text}`}>{task.priority}</span>
+              </div>
             </div>
           </div>
         ) : null;
