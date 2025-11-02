@@ -46,8 +46,7 @@ const Tasks = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editPriority, setEditPriority] = useState('');
   const [editDate, setEditDate] = useState<Date | undefined>();
-  const [labelsPopupTaskId, setLabelsPopupTaskId] = useState<string | null>(null);
-  const [labelsPopupPosition, setLabelsPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [expandedLabelsTaskId, setExpandedLabelsTaskId] = useState<string | null>(null);
 
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -224,8 +223,7 @@ const Tasks = () => {
   React.useEffect(() => {
     const handleClick = () => {
       setContextMenu(null);
-      setLabelsPopupTaskId(null);
-      setLabelsPopupPosition(null);
+      setExpandedLabelsTaskId(null);
     };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
@@ -334,7 +332,6 @@ const Tasks = () => {
                       } ${
                         dragOverTaskId === task.id ? 'border border-blue-500' : ''
                       }`}
-                      onClick={() => handleToggleTask(task.id)}
                       onContextMenu={(e) => handleContextMenu(e, task.id)}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task.id)}
@@ -395,67 +392,108 @@ const Tasks = () => {
                       <div className="ml-6 flex items-center gap-2 flex-wrap">
                         {/* Date and Time Tag */}
                         {(task.dueDate || task.time) && (
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full text-xs text-gray-300">
-                            <Calendar className="h-3 w-3" />
-                            <span>
-                              {task.dueDate && task.time ? `${task.dueDate} ${task.time}` : task.dueDate || task.time}
-                            </span>
-                          </div>
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full text-xs text-gray-300 cursor-help">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>
+                                    {task.dueDate && task.time ? `${task.dueDate} ${task.time}` : task.dueDate || task.time}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border-0 z-50">
+                                <p className="text-xs">
+                                  {task.dueDate && task.time ? `Due: ${task.dueDate} at ${task.time}` : `Due: ${task.dueDate || task.time}`}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
 
                         {/* Priority Badge */}
                         {(() => {
                           const style = getPriorityStyle(task.priority);
                           return (
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${style.bg} ${style.text}`}>
-                              <Flag className={`h-3 w-3 ${style.text}`} />
-                              <span>{task.priority}</span>
-                            </span>
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 ${style.bg} ${style.text} cursor-help`}>
+                                    <Flag className={`h-3 w-3 ${style.text}`} />
+                                    <span>{task.priority}</span>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border-0 z-50">
+                                  <p className="text-xs">Priority: {task.priority}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           );
                         })()}
 
                         {/* Reminder Indicator */}
                         {task.reminder && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full">
-                            <Bell className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-300">{task.reminder}</span>
-                          </div>
-                        )}
-
-                        {/* Labels - Consolidated into single button */}
-                        {task.labels && task.labels.length > 0 && (
-                          <TooltipProvider delayDuration={200}>
+                          <TooltipProvider delayDuration={100}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setLabelsPopupTaskId(task.id);
-                                    setLabelsPopupPosition({ x: rect.left, y: rect.bottom + 8 });
-                                  }}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full hover:border-[#525252] transition-all duration-200 cursor-pointer"
-                                >
-                                  {task.labels.map((label, index) => (
-                                    <Tag
-                                      key={index}
-                                      className={`h-4 w-4 ${getLabelColor(label)} transition-all duration-200`}
-                                    />
-                                  ))}
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border border-[#414141] z-50 p-2">
-                                <div className="flex flex-col gap-2">
-                                  {task.labels.map((label, index) => (
-                                    <div key={index} className="flex items-center gap-2">
-                                      <Tag className={`h-3 w-3 ${getLabelColor(label)}`} />
-                                      <span className="text-xs">{label}</span>
-                                    </div>
-                                  ))}
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full cursor-help">
+                                  <Bell className="h-3 w-3 text-gray-400" />
+                                  <span className="text-xs text-gray-300">{task.reminder}</span>
                                 </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border-0 z-50">
+                                <p className="text-xs">Reminder: {task.reminder}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                        )}
+
+                        {/* Labels - Consolidated into single button with tooltip and expandable view */}
+                        {task.labels && task.labels.length > 0 && (
+                          <div className="flex flex-col gap-1.5 w-full">
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedLabelsTaskId(expandedLabelsTaskId === task.id ? null : task.id);
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full hover:border-[#525252] transition-all duration-200 cursor-pointer w-fit"
+                                  >
+                                    {task.labels.map((label, index) => (
+                                      <Tag
+                                        key={index}
+                                        className={`h-4 w-4 ${getLabelColor(label)} transition-all duration-200`}
+                                      />
+                                    ))}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" align="start" className="bg-[#1f1f1f] text-white rounded-xl border border-[#414141] z-50 p-2">
+                                  <div className="flex flex-col gap-2">
+                                    {task.labels.map((label, index) => (
+                                      <div key={index} className="flex items-center gap-2">
+                                        <Tag className={`h-3 w-3 ${getLabelColor(label)}`} />
+                                        <span className="text-xs">{label}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
+                            {/* Expanded labels view */}
+                            {expandedLabelsTaskId === task.id && (
+                              <div className="flex flex-col gap-1.5 pl-6">
+                                {task.labels.map((label, index) => (
+                                  <div key={index} className="flex items-center gap-2 px-3 py-1.5 bg-[#252527] border border-[#414141] rounded-full w-fit">
+                                    <Tag className={`h-4 w-4 ${getLabelColor(label)}`} />
+                                    <span className="text-xs text-white">{label}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -687,29 +725,6 @@ const Tasks = () => {
         </div>
       )}
 
-      {/* Labels Popup Modal */}
-      {labelsPopupTaskId && labelsPopupPosition && (() => {
-        const task = tasks.find(t => t.id === labelsPopupTaskId);
-        return task?.labels && task.labels.length > 0 ? (
-          <div
-            className="fixed bg-[#1f1f1f] border border-[#414141] rounded-[16px] p-4 z-50 shadow-xl"
-            style={{
-              left: `${labelsPopupPosition.x}px`,
-              top: `${labelsPopupPosition.y}px`,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex flex-col gap-3">
-              {task.labels.map((label, index) => (
-                <div key={index} className="flex items-center gap-3 px-3 py-2 bg-[#252527] border border-[#414141] rounded-[10px]">
-                  <Tag className={`h-5 w-5 ${getLabelColor(label)}`} />
-                  <span className="text-sm text-white">{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null;
-      })()}
     </div>
   );
 };

@@ -220,7 +220,7 @@ const LabelSelector: React.FC<LabelSelectorProps> = ({ selectedLabels, onSelect 
                     )}
                   >
                     <Tag className={cn("h-4 w-4 mr-2", label.color)} />
-                    {label.name}
+                    #{label.name}
                     {selectedLabels.includes(label.name) && (
                       <span className="ml-auto text-green-400 group-hover:hidden">✓</span>
                     )}
