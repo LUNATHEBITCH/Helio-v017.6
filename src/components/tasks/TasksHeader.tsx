@@ -14,36 +14,32 @@ interface TasksHeaderProps {
   setCurrentView: (view: string) => void;
   onCreateTask: () => void;
   isRotated: boolean;
+  filterSettings?: { date: boolean; priority: boolean; label: boolean };
+  setFilterSettings?: (settings: { date: boolean; priority: boolean; label: boolean }) => void;
+  sortSettings?: { completionStatus: boolean; creationDate: boolean; pages: boolean; chats: boolean };
+  setSortSettings?: (settings: { completionStatus: boolean; creationDate: boolean; pages: boolean; chats: boolean }) => void;
+  filterValues?: { date: string; priority: string; label: string };
+  setFilterValues?: (values: { date: string; priority: string; label: string }) => void;
 }
 
-const TasksHeader = ({ 
-  totalTasks, 
-  completedTasks, 
-  pendingTasks, 
-  currentView, 
-  setCurrentView, 
-  onCreateTask, 
-  isRotated 
+const TasksHeader = ({
+  totalTasks,
+  completedTasks,
+  pendingTasks,
+  currentView,
+  setCurrentView,
+  onCreateTask,
+  isRotated,
+  filterSettings = { date: false, priority: false, label: false },
+  setFilterSettings,
+  sortSettings = { completionStatus: false, creationDate: true, pages: false, chats: false },
+  setSortSettings,
+  filterValues = { date: '', priority: '', label: '' },
+  setFilterValues
 }: TasksHeaderProps) => {
   const [displayPopoverOpen, setDisplayPopoverOpen] = useState(false);
   const [sortCollapsed, setSortCollapsed] = useState(true);
-  const [sortToggles, setSortToggles] = useState({
-    dueDate: false,
-    priority: false,
-    completionStatus: false,
-    creationDate: true,
-    pages: false,
-    chats: false
-  });
   const [filterCollapsed, setFilterCollapsed] = useState(true);
-  const [filterToggles, setFilterToggles] = useState({
-    keyword: false,
-    date: false,
-    priority: false,
-    label: false,
-    pages: false,
-    chats: false
-  });
 
   return (
     <>
@@ -121,8 +117,6 @@ const TasksHeader = ({
                       </p>
                       <CollapsibleContent className="space-y-3">
                         {[
-                          { key: 'dueDate', label: 'Due Date', icon: Calendar },
-                          { key: 'priority', label: 'Priority', icon: Flag },
                           { key: 'completionStatus', label: 'Completion Status', icon: CheckCircle },
                           { key: 'creationDate', label: 'Creation Date', icon: Clock },
                           { key: 'pages', label: 'Pages', icon: FileText },
@@ -132,10 +126,12 @@ const TasksHeader = ({
                             <span className="text-gray-300 text-sm">{sortOption.label}</span>
                             <IconToggle
                               icon={sortOption.icon}
-                              checked={sortToggles[sortOption.key as keyof typeof sortToggles]}
-                              onCheckedChange={(checked) => 
-                                setSortToggles(prev => ({ ...prev, [sortOption.key]: checked }))
-                              }
+                              checked={sortSettings[sortOption.key as keyof typeof sortSettings]}
+                              onCheckedChange={(checked) => {
+                                const newSettings = { ...sortSettings, [sortOption.key]: checked };
+                                setSortSettings?.(newSettings);
+                                localStorage.setItem('kario-sort-settings', JSON.stringify(newSettings));
+                              }}
                             />
                           </div>
                         ))}
@@ -162,21 +158,20 @@ const TasksHeader = ({
                       </p>
                       <CollapsibleContent className="space-y-3">
                         {[
-                          { key: 'keyword', label: 'Keyword', icon: Search },
                           { key: 'date', label: 'Date', icon: Calendar },
                           { key: 'priority', label: 'Priority', icon: AlertCircle },
-                          { key: 'label', label: 'Label', icon: Tag },
-                          { key: 'pages', label: 'Pages', icon: FileText },
-                          { key: 'chats', label: 'Chats', icon: MessageSquare }
+                          { key: 'label', label: 'Label', icon: Tag }
                         ].map((filterOption) => (
                           <div key={filterOption.key} className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">{filterOption.label}</span>
                             <IconToggle
                               icon={filterOption.icon}
-                              checked={filterToggles[filterOption.key as keyof typeof filterToggles]}
-                              onCheckedChange={(checked) => 
-                                setFilterToggles(prev => ({ ...prev, [filterOption.key]: checked }))
-                              }
+                              checked={filterSettings[filterOption.key as keyof typeof filterSettings]}
+                              onCheckedChange={(checked) => {
+                                const newSettings = { ...filterSettings, [filterOption.key]: checked };
+                                setFilterSettings?.(newSettings);
+                                localStorage.setItem('kario-filter-settings', JSON.stringify(newSettings));
+                              }}
                             />
                           </div>
                         ))}

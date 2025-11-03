@@ -49,6 +49,18 @@ const Tasks = () => {
   const [editDate, setEditDate] = useState<Date | undefined>();
   const [expandedLabelsTaskId, setExpandedLabelsTaskId] = useState<string | null>(null);
   const [selectedRepeat, setSelectedRepeat] = useState<string>('');
+  const [filterSettings, setFilterSettings] = useState(() => {
+    const saved = localStorage.getItem('kario-filter-settings');
+    return saved ? JSON.parse(saved) : { date: false, priority: false, label: false };
+  });
+  const [sortSettings, setSortSettings] = useState(() => {
+    const saved = localStorage.getItem('kario-sort-settings');
+    return saved ? JSON.parse(saved) : { completionStatus: false, creationDate: true, pages: false, chats: false };
+  });
+  const [filterValues, setFilterValues] = useState(() => {
+    const saved = localStorage.getItem('kario-filter-values');
+    return saved ? JSON.parse(saved) : { date: '', priority: '', label: '' };
+  });
 
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -274,6 +286,39 @@ const Tasks = () => {
     setDragOverTaskId(null);
   };
 
+  const applyFiltersAndSort = (tasksToFilter: Task[]): Task[] => {
+    let filtered = [...tasksToFilter];
+
+    if (filterSettings.date && filterValues.date) {
+      filtered = filtered.filter(task => task.dueDate === filterValues.date);
+    }
+
+    if (filterSettings.priority && filterValues.priority) {
+      filtered = filtered.filter(task => task.priority === filterValues.priority);
+    }
+
+    if (filterSettings.label && filterValues.label) {
+      filtered = filtered.filter(task => task.labels?.includes(filterValues.label));
+    }
+
+    if (sortSettings.completionStatus) {
+      filtered.sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? 1 : -1;
+      });
+    }
+
+    if (sortSettings.creationDate) {
+      filtered.sort((a, b) => {
+        const dateA = new Date(a.creationDate).getTime();
+        const dateB = new Date(b.creationDate).getTime();
+        return dateB - dateA;
+      });
+    }
+
+    return filtered;
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#161618]">
       <TasksHeader
@@ -284,6 +329,21 @@ const Tasks = () => {
         setCurrentView={setCurrentView}
         onCreateTask={handleCreateTask}
         isRotated={isRotated}
+        filterSettings={filterSettings}
+        setFilterSettings={(settings) => {
+          setFilterSettings(settings);
+          localStorage.setItem('kario-filter-settings', JSON.stringify(settings));
+        }}
+        sortSettings={sortSettings}
+        setSortSettings={(settings) => {
+          setSortSettings(settings);
+          localStorage.setItem('kario-sort-settings', JSON.stringify(settings));
+        }}
+        filterValues={filterValues}
+        setFilterValues={(values) => {
+          setFilterValues(values);
+          localStorage.setItem('kario-filter-values', JSON.stringify(values));
+        }}
       />
       
       {/* LIST View Content */}
@@ -294,7 +354,7 @@ const Tasks = () => {
             {/* Case b & e: Tasks-By-Kairo Section */}
             <div className="max-w-[980px]">
               {/* Case f: Section heading with K icon that transforms to chevron on hover */}
-              <div 
+              <div
                 className="flex items-center gap-2 mb-4 cursor-pointer group relative bg-[#1b1b1b] border border-[#525252] rounded-[20px]"
                 style={{ padding: '0.80rem' }}
                 onClick={() => setIsSectionExpanded(!isSectionExpanded)}
@@ -304,16 +364,16 @@ const Tasks = () => {
                   K
                 </span>
                 {/* Chevron icon (visible on hover) */}
-                <ChevronRight 
+                <ChevronRight
                   className={`h-5 w-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-all duration-200 absolute ${
                     isSectionExpanded ? 'rotate-90' : 'rotate-0'
                   }`}
                 />
                 <h2 className="text-white text-xl font-semibold">Tasks Made By Kairo</h2>
-                
+
                 {/* Task count indicator - positioned right next to heading */}
                 <div className="bg-[#242628] border border-[#414141] text-white font-orbitron font-bold px-3 py-1 rounded-[5px]">
-                  {tasks.length}
+                  {applyFiltersAndSort(tasks).length}
                 </div>
 
                 {/* Three-dot menu icon (visible on hover) */}
@@ -328,7 +388,7 @@ const Tasks = () => {
               <div className="bg-transparent max-w-[980px]" style={{ marginBottom: '45px' }}>
                 {/* Card-based task list */}
                 <div className="space-y-3">
-                  {tasks.map((task) => (
+                  {applyFiltersAndSort(tasks).map((task) => (
                     <div
                       key={task.id}
                       className={`rounded-[12px] p-4 bg-transparent hover:bg-[#1f1f1f] transition-all ${
