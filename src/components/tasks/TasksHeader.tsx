@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { IconToggle } from '@/components/ui/icon-toggle';
 import PriorityFilterPopover from './PriorityFilterPopover';
+import DateFilterPopover from './DateFilterPopover';
 import LabelFilterPopover from './LabelFilterPopover';
 
 interface TasksHeaderProps {
@@ -160,17 +161,30 @@ const TasksHeader = ({
                       </p>
                       <CollapsibleContent className="space-y-3">
                         {/* Date Filter */}
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                           <span className="text-gray-300 text-sm">Date</span>
-                          <IconToggle
-                            icon={Calendar}
-                            checked={filterSettings.date}
-                            onCheckedChange={(checked) => {
-                              const newSettings = { ...filterSettings, date: checked };
-                              setFilterSettings?.(newSettings);
-                              localStorage.setItem('kario-filter-settings', JSON.stringify(newSettings));
-                            }}
-                          />
+                          <div>
+                            {filterSettings.date && setFilterValues ? (
+                              <DateFilterPopover
+                                selectedDate={filterValues.date}
+                                onSelect={(date) => {
+                                  const newValues = { ...filterValues, date };
+                                  setFilterValues(newValues);
+                                  localStorage.setItem('kario-filter-values', JSON.stringify(newValues));
+                                }}
+                              />
+                            ) : (
+                              <IconToggle
+                                icon={Calendar}
+                                checked={filterSettings.date}
+                                onCheckedChange={(checked) => {
+                                  const newSettings = { ...filterSettings, date: checked };
+                                  setFilterSettings?.(newSettings);
+                                  localStorage.setItem('kario-filter-settings', JSON.stringify(newSettings));
+                                }}
+                              />
+                            )}
+                          </div>
                         </div>
 
                         {/* Priority Filter Popover */}

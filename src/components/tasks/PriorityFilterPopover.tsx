@@ -73,7 +73,7 @@ const PriorityFilterPopover: React.FC<PriorityFilterPopoverProps> = ({ selectedP
       </PopoverTrigger>
       <PopoverContent
         className="w-[300px] p-0 bg-[#1b1b1b] border border-[#414141] rounded-[12px] overflow-hidden flex flex-col"
-        align="center"
+        align="start"
         side="bottom"
         sideOffset={8}
         data-nested={true}
