@@ -72,46 +72,46 @@ const PriorityFilterPopover: React.FC<PriorityFilterPopoverProps> = ({ selectedP
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[300px] h-[300px] p-0 bg-[#1b1b1b] border border-[#414141] rounded-[20px] overflow-hidden flex flex-col z-[9999]"
-        align="center"
+        className="w-[300px] p-0 bg-[#1b1b1b] border border-[#414141] rounded-[12px] overflow-hidden flex flex-col z-[9999]"
+        align="start"
         side="right"
-        sideOffset={12}
+        sideOffset={8}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col">
           {/* Search Input */}
-          <div className="p-3 border-b border-[#414141]">
-            <Input
+          <div className="p-3">
+            <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search priority..."
-              className="bg-[#252525] border border-[#414141] text-white placeholder-gray-500 focus:border-[#525252]"
+              className="flex-1 bg-transparent text-white text-sm px-0 py-2 outline-none placeholder-gray-500 border-none w-full"
             />
           </div>
 
           {/* Priority List */}
-          <div className="flex-1 overflow-auto p-3 space-y-2">
+          <div className="flex-1 overflow-auto px-3 pb-3 space-y-2 max-h-[300px]">
             {/* Custom Priorities */}
             {customPriorities.length > 0 && filteredCustom.length > 0 && (
               <>
-                <div className="text-xs text-gray-500 mb-2 px-1">Custom</div>
+                <div className="text-xs text-gray-500 mb-2">Custom</div>
                 {filteredCustom.map((priority) => (
-                  <button
+                  <Button
                     key={priority.name}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => togglePriority(priority.name)}
                     className={cn(
-                      "w-full text-left px-3 py-2 rounded-[10px] transition-all text-sm flex items-center gap-2 border",
-                      selectedPriorities.includes(priority.name)
-                        ? "bg-[#2e2e2e] border-[#525252] text-white"
-                        : "bg-[#252525] border-[#414141] text-gray-300 hover:bg-[#2a2a2a]"
+                      "w-full justify-start text-left bg-[#252525] text-gray-300 hover:bg-[#2e2e2e] hover:text-white border border-[#414141] rounded-[15px] h-9 text-xs transition-all duration-200",
+                      selectedPriorities.includes(priority.name) && "bg-[#2e2e2e] text-white"
                     )}
                   >
-                    <div className={cn("w-2 h-2 rounded-full", priority.color)}></div>
+                    <div className={cn("w-2 h-2 rounded-full mr-2", priority.color)}></div>
                     <span className="flex-1">{priority.name}</span>
                     {selectedPriorities.includes(priority.name) && (
                       <span className="text-green-400">✓</span>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </>
             )}
@@ -122,24 +122,24 @@ const PriorityFilterPopover: React.FC<PriorityFilterPopoverProps> = ({ selectedP
                 {customPriorities.length > 0 && filteredCustom.length > 0 && (
                   <div className="border-t border-[#414141] my-2"></div>
                 )}
-                <div className="text-xs text-gray-500 mb-2 px-1">Default</div>
+                <div className="text-xs text-gray-500 mb-2">Default</div>
                 {filteredPreset.map((priority) => (
-                  <button
+                  <Button
                     key={priority.name}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => togglePriority(priority.name)}
                     className={cn(
-                      "w-full text-left px-3 py-2 rounded-[10px] transition-all text-sm flex items-center gap-2 border",
-                      selectedPriorities.includes(priority.name)
-                        ? "bg-[#2e2e2e] border-[#525252] text-white"
-                        : "bg-[#252525] border-[#414141] text-gray-300 hover:bg-[#2a2a2a]"
+                      "w-full justify-start text-left bg-[#252525] text-gray-300 hover:bg-[#2e2e2e] hover:text-white border border-[#414141] rounded-[15px] h-9 text-xs transition-all duration-200",
+                      selectedPriorities.includes(priority.name) && "bg-[#2e2e2e] text-white"
                     )}
                   >
-                    <div className={cn("w-2 h-2 rounded-full", priority.color)}></div>
+                    <div className={cn("w-2 h-2 rounded-full mr-2", priority.color)}></div>
                     <span className="flex-1">{priority.name}</span>
                     {selectedPriorities.includes(priority.name) && (
                       <span className="text-green-400">✓</span>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </>
             )}
