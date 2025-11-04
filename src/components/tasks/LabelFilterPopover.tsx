@@ -84,8 +84,8 @@ const LabelFilterPopover: React.FC<LabelFilterPopoverProps> = ({ selectedLabels,
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[300px] h-[300px] p-0 bg-[#1b1b1b] border border-[#414141] rounded-[20px] overflow-hidden flex flex-col"
-        align="start"
+        className="w-[300px] h-[300px] p-0 bg-[#1b1b1b] border border-[#414141] rounded-[20px] overflow-hidden flex flex-col z-[9999]"
+        align="center"
         side="right"
         sideOffset={12}
       >
