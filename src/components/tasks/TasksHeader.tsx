@@ -191,60 +191,30 @@ const TasksHeader = ({
 
                         {/* Priority Filter */}
                         <div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                          {filterSettings.priority && setFilterValues ? (
-                            <PriorityFilterCollapsible
-                              selectedPriorities={filterValues.priorities}
-                              onSelect={(priorities) => {
-                                const newValues = { ...filterValues, priorities };
-                                setFilterValues(newValues);
-                                localStorage.setItem('kario-filter-values', JSON.stringify(newValues));
-                              }}
-                              isOpen={priorityFilterOpen}
-                              onOpenChange={setPriorityFilterOpen}
-                            />
-                          ) : (
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-300 text-sm">Priority</span>
-                              <IconToggle
-                                icon={AlertCircle}
-                                checked={filterSettings.priority}
-                                onCheckedChange={(checked) => {
-                                  const newSettings = { ...filterSettings, priority: checked };
-                                  setFilterSettings?.(newSettings);
-                                  localStorage.setItem('kario-filter-settings', JSON.stringify(newSettings));
-                                }}
-                              />
-                            </div>
-                          )}
+                          <PriorityFilterCollapsible
+                            selectedPriorities={filterValues.priorities}
+                            onSelect={(priorities) => {
+                              const newValues = { ...filterValues, priorities };
+                              setFilterValues(newValues);
+                              localStorage.setItem('kario-filter-values', JSON.stringify(newValues));
+                            }}
+                            isOpen={priorityFilterOpen}
+                            onOpenChange={setPriorityFilterOpen}
+                          />
                         </div>
 
                         {/* Label Filter */}
                         <div onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                          {filterSettings.label && setFilterValues ? (
-                            <LabelFilterCollapsible
-                              selectedLabels={filterValues.labels}
-                              onSelect={(labels) => {
-                                const newValues = { ...filterValues, labels };
-                                setFilterValues(newValues);
-                                localStorage.setItem('kario-filter-values', JSON.stringify(newValues));
-                              }}
-                              isOpen={labelFilterOpen}
-                              onOpenChange={setLabelFilterOpen}
-                            />
-                          ) : (
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-300 text-sm">Label</span>
-                              <IconToggle
-                                icon={Tag}
-                                checked={filterSettings.label}
-                                onCheckedChange={(checked) => {
-                                  const newSettings = { ...filterSettings, label: checked };
-                                  setFilterSettings?.(newSettings);
-                                  localStorage.setItem('kario-filter-settings', JSON.stringify(newSettings));
-                                }}
-                              />
-                            </div>
-                          )}
+                          <LabelFilterCollapsible
+                            selectedLabels={filterValues.labels}
+                            onSelect={(labels) => {
+                              const newValues = { ...filterValues, labels };
+                              setFilterValues(newValues);
+                              localStorage.setItem('kario-filter-values', JSON.stringify(newValues));
+                            }}
+                            isOpen={labelFilterOpen}
+                            onOpenChange={setLabelFilterOpen}
+                          />
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
