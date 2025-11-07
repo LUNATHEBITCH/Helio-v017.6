@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, X } from 'lucide-react';
+import { Calendar, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { IconToggle } from '@/components/ui/icon-toggle';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, parse, isWithinInterval, addMonths, subMonths, isValid } from 'date-fns';
 
 interface InlineDateFilterProps {
@@ -93,14 +94,13 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
 
       {isActive && (
         <div className="bg-[#252525] border border-[#414141] rounded-[12px] p-3 space-y-3">
-          <div className="space-y-2">
-            <label className="text-xs text-gray-400">Search date (MM/DD/YYYY or YYYY-MM-DD)</label>
+          <div className="space-y-1">
             <Input
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchInput(e.target.value)}
-              placeholder="e.g., 12/25/2024"
-              className="w-full bg-[#1b1b1b] border border-[#414141] text-white placeholder-gray-500 text-sm rounded-[8px] focus:border-[#555555]"
+              placeholder="Enter date (MM/DD/YYYY or YYYY-MM-DD)"
+              className="w-full bg-[#1b1b1b] border-0 text-white placeholder-gray-600 text-sm rounded-[6px] focus:border-0 focus:ring-1 focus:ring-[#555555] hover:bg-[#242424] transition-colors"
             />
             {searchError && (
               <p className="text-xs text-red-400">{searchError}</p>
@@ -110,7 +110,19 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
           <div className="border-t border-[#414141]"></div>
 
           <div className="space-y-2">
-            <p className="text-xs text-gray-400">Or pick from calendar (within 3 months)</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Or pick from calendar</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-gray-500 hover:text-gray-300 cursor-help transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-[#1b1b1b] border border-[#414141] text-gray-300 text-xs">
+                    Filtering limited to 3 months • Upgrade to premium for unlimited range
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="flex justify-center scale-90 origin-top">
               <CalendarComponent
                 mode="single"
@@ -133,10 +145,6 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
               Clear
             </Button>
           )}
-
-          <div className="text-xs text-gray-500 bg-[#1b1b1b] rounded-[8px] p-2 border border-[#414141]">
-            Filtering limited to 3 months • Upgrade to premium for unlimited range
-          </div>
         </div>
       )}
     </div>
