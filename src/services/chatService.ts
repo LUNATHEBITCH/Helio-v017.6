@@ -419,7 +419,14 @@ export class ChatService {
     const groqKeys = this.getApiKeys('groq');
     const openaiKeys = this.getApiKeys('openai');
     const geminiKeys = this.getApiKeys('gemini');
-    
+
+    console.log('API Keys Status:', {
+      openrouter: openrouterKeys.length,
+      groq: groqKeys.length,
+      openai: openaiKeys.length,
+      gemini: geminiKeys.length
+    });
+
     return openrouterKeys.length > 0 || groqKeys.length > 0 || openaiKeys.length > 0 || geminiKeys.length > 0;
   }
 

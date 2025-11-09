@@ -26,7 +26,7 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
     openrouter: ['']
   });
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
-  const [selectedProvider, setSelectedProvider] = useState<'openai' | 'gemini' | 'groq' | 'openrouter'>('openrouter');
+  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set(['openrouter']));
   const { toast } = useToast();
 
   // Load existing keys when dialog opens
@@ -38,26 +38,38 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
         groq: JSON.parse(localStorage.getItem('groq_api_keys') || '[""]'),
         openrouter: JSON.parse(localStorage.getItem('openrouter_api_keys') || '[""]')
       };
-      
+
       setApiKeys(loadedKeys);
 
-      // Determine which provider is currently active (prioritize OpenRouter)
+      // Expand providers that have valid keys
+      const expanded = new Set<string>();
       if (loadedKeys.openrouter.some(key => key.trim())) {
-        setSelectedProvider('openrouter');
-      } else if (loadedKeys.groq.some(key => key.trim())) {
-        setSelectedProvider('groq');
-      } else if (loadedKeys.gemini.some(key => key.trim())) {
-        setSelectedProvider('gemini');
-      } else if (loadedKeys.openai.some(key => key.trim())) {
-        setSelectedProvider('openai');
-      } else {
-        setSelectedProvider('openrouter');
+        expanded.add('openrouter');
       }
+      if (loadedKeys.groq.some(key => key.trim())) {
+        expanded.add('groq');
+      }
+      if (loadedKeys.gemini.some(key => key.trim())) {
+        expanded.add('gemini');
+      }
+      if (loadedKeys.openai.some(key => key.trim())) {
+        expanded.add('openai');
+      }
+      if (expanded.size === 0) {
+        expanded.add('openrouter');
+      }
+      setExpandedProviders(expanded);
     }
   }, [isOpen]);
 
-  const handleProviderChange = (provider: 'openai' | 'gemini' | 'groq' | 'openrouter') => {
-    setSelectedProvider(provider);
+  const toggleProviderExpanded = (provider: string) => {
+    const newExpanded = new Set(expandedProviders);
+    if (newExpanded.has(provider)) {
+      newExpanded.delete(provider);
+    } else {
+      newExpanded.add(provider);
+    }
+    setExpandedProviders(newExpanded);
   };
 
   const addKeyField = (provider: 'openai' | 'gemini' | 'groq' | 'openrouter') => {
@@ -94,29 +106,39 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
   };
 
   const handleSave = () => {
-    // Clear all API keys first
+    // Clear old single-key format to avoid conflicts
     localStorage.removeItem('openai_api_key');
     localStorage.removeItem('gemini_api_key');
     localStorage.removeItem('groq_api_key');
     localStorage.removeItem('openrouter_api_key');
     localStorage.removeItem('nvidia_api_key');
-    localStorage.removeItem('openai_api_keys');
-    localStorage.removeItem('gemini_api_keys');
-    localStorage.removeItem('groq_api_keys');
-    localStorage.removeItem('openrouter_api_keys');
 
-    // Save only the selected provider's keys
-    const validKeys = apiKeys[selectedProvider].filter(key => key.trim());
-    if (validKeys.length > 0) {
-      localStorage.setItem(`${selectedProvider}_api_keys`, JSON.stringify(validKeys));
-      // Also save the first key in the old format for backward compatibility
-      localStorage.setItem(`${selectedProvider}_api_key`, validKeys[0]);
-    }
+    // Save all providers' keys (preserve existing ones, update modified ones)
+    const providers = ['openai', 'gemini', 'groq', 'openrouter'] as const;
+    let totalKeysSaved = 0;
 
-    toast({
-      title: "API Keys Saved",
-      description: `Your ${selectedProvider.toUpperCase()} API keys (${validKeys.length}) have been saved successfully. You can now use the chat functionality with failover support.`,
+    providers.forEach(provider => {
+      const validKeys = apiKeys[provider].filter(key => key.trim());
+      if (validKeys.length > 0) {
+        localStorage.setItem(`${provider}_api_keys`, JSON.stringify(validKeys));
+        totalKeysSaved += validKeys.length;
+      } else {
+        // Remove if no valid keys
+        localStorage.removeItem(`${provider}_api_keys`);
+      }
     });
+
+    if (totalKeysSaved > 0) {
+      toast({
+        title: "API Keys Saved",
+        description: `Your API keys (${totalKeysSaved} total) have been saved successfully. The system will use the best available provider for each request.`,
+      });
+    } else {
+      toast({
+        title: "No API Keys",
+        description: "Please add at least one API key to use the chat functionality.",
+      });
+    }
 
     onClose();
   };
@@ -145,8 +167,22 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
     });
   };
 
-  const getActiveKeys = () => {
-    return apiKeys[selectedProvider].filter(key => key.trim());
+  const getActiveKeys = (provider?: 'openai' | 'gemini' | 'groq' | 'openrouter'): number => {
+    if (provider) {
+      return apiKeys[provider].filter(key => key.trim()).length;
+    }
+    // Count total active keys across all providers
+    let total = 0;
+    (['openai', 'gemini', 'groq', 'openrouter'] as const).forEach(p => {
+      total += apiKeys[p].filter(key => key.trim()).length;
+    });
+    return total;
+  };
+
+  const hasAnyActiveKeys = () => {
+    return (['openai', 'gemini', 'groq', 'openrouter'] as const).some(
+      provider => apiKeys[provider].some(key => key.trim())
+    );
   };
 
   const renderKeyInputs = (provider: 'openai' | 'gemini' | 'groq' | 'openrouter', placeholder: string, color: string) => {
@@ -220,101 +256,125 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <p className="text-gray-300 text-sm">Choose your AI provider and add up to 5 API keys for automatic failover:</p>
-              
+              <p className="text-gray-300 text-sm">Add API keys for one or more providers. The system will automatically use the best available option:</p>
+
               <div className="space-y-4">
-                {/* OpenRouter Option - Listed First */}
-                <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                  selectedProvider === 'openrouter' 
-                    ? 'border-orange-500 bg-orange-500/10' 
+                {/* OpenRouter Option */}
+                <div className={`border rounded-lg transition-colors ${
+                  expandedProviders.has('openrouter')
+                    ? 'border-orange-500 bg-orange-500/10'
                     : 'border-gray-600 hover:border-gray-500'
-                }`} onClick={() => handleProviderChange('openrouter')}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <input
-                      type="radio"
-                      checked={selectedProvider === 'openrouter'}
-                      onChange={() => handleProviderChange('openrouter')}
-                      className="text-orange-500"
-                    />
-                    <label className="text-white font-medium">OpenRouter API Keys</label>
-                    {selectedProvider === 'openrouter' && <span className="text-orange-400 text-xs">ACTIVE</span>}
-                  </div>
-                  {selectedProvider === 'openrouter' && (
-                    <div className="space-y-3">
+                }`}>
+                  <button
+                    onClick={() => toggleProviderExpanded('openrouter')}
+                    className="w-full p-4 flex items-center gap-3 justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <label className="text-white font-medium cursor-pointer">OpenRouter API Keys</label>
+                      {getActiveKeys('openrouter').length > 0 && (
+                        <span className="text-orange-400 text-xs bg-orange-500/20 px-2 py-1 rounded">
+                          {getActiveKeys('openrouter').length} key(s)
+                        </span>
+                      )}
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedProviders.has('openrouter') ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </button>
+                  {expandedProviders.has('openrouter') && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-orange-500/20">
                       {renderKeyInputs('openrouter', 'sk-or-v1-...', 'orange')}
-                      <p className="text-gray-400 text-sm">Access Claude, GPT, Llama, and 200+ models with lower costs. Get your API keys from OpenRouter.ai</p>
+                      <p className="text-gray-400 text-sm">Access Claude, GPT, Llama, and 200+ models with lower costs. Get your API keys from openrouter.ai</p>
                     </div>
                   )}
                 </div>
 
                 {/* OpenAI Option */}
-                <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                  selectedProvider === 'openai' 
-                    ? 'border-blue-500 bg-blue-500/10' 
+                <div className={`border rounded-lg transition-colors ${
+                  expandedProviders.has('openai')
+                    ? 'border-blue-500 bg-blue-500/10'
                     : 'border-gray-600 hover:border-gray-500'
-                }`} onClick={() => handleProviderChange('openai')}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <input
-                      type="radio"
-                      checked={selectedProvider === 'openai'}
-                      onChange={() => handleProviderChange('openai')}
-                      className="text-blue-500"
-                    />
-                    <label className="text-white font-medium">OpenAI API Keys</label>
-                    {selectedProvider === 'openai' && <span className="text-blue-400 text-xs">ACTIVE</span>}
-                  </div>
-                  {selectedProvider === 'openai' && (
-                    <div className="space-y-3">
+                }`}>
+                  <button
+                    onClick={() => toggleProviderExpanded('openai')}
+                    className="w-full p-4 flex items-center gap-3 justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <label className="text-white font-medium cursor-pointer">OpenAI API Keys</label>
+                      {getActiveKeys('openai').length > 0 && (
+                        <span className="text-blue-400 text-xs bg-blue-500/20 px-2 py-1 rounded">
+                          {getActiveKeys('openai').length} key(s)
+                        </span>
+                      )}
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedProviders.has('openai') ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </button>
+                  {expandedProviders.has('openai') && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-blue-500/20">
                       {renderKeyInputs('openai', 'sk-...', 'blue')}
-                      <p className="text-gray-400 text-sm">Get your API keys from OpenAI dashboard</p>
+                      <p className="text-gray-400 text-sm">Get your API keys from platform.openai.com</p>
                     </div>
                   )}
                 </div>
 
                 {/* Gemini Option */}
-                <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                  selectedProvider === 'gemini' 
-                    ? 'border-purple-500 bg-purple-500/10' 
+                <div className={`border rounded-lg transition-colors ${
+                  expandedProviders.has('gemini')
+                    ? 'border-cyan-500 bg-cyan-500/10'
                     : 'border-gray-600 hover:border-gray-500'
-                }`} onClick={() => handleProviderChange('gemini')}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <input
-                      type="radio"
-                      checked={selectedProvider === 'gemini'}
-                      onChange={() => handleProviderChange('gemini')}
-                      className="text-purple-500"
-                    />
-                    <label className="text-white font-medium">Google Gemini API Keys</label>
-                    {selectedProvider === 'gemini' && <span className="text-purple-400 text-xs">ACTIVE</span>}
-                  </div>
-                  {selectedProvider === 'gemini' && (
-                    <div className="space-y-3">
-                      {renderKeyInputs('gemini', 'AIza...', 'purple')}
-                      <p className="text-gray-400 text-sm">Get your API keys from Google AI Studio</p>
+                }`}>
+                  <button
+                    onClick={() => toggleProviderExpanded('gemini')}
+                    className="w-full p-4 flex items-center gap-3 justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <label className="text-white font-medium cursor-pointer">Google Gemini API Keys</label>
+                      {getActiveKeys('gemini').length > 0 && (
+                        <span className="text-cyan-400 text-xs bg-cyan-500/20 px-2 py-1 rounded">
+                          {getActiveKeys('gemini').length} key(s)
+                        </span>
+                      )}
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedProviders.has('gemini') ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </button>
+                  {expandedProviders.has('gemini') && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-cyan-500/20">
+                      {renderKeyInputs('gemini', 'AIza...', 'cyan')}
+                      <p className="text-gray-400 text-sm">Get your API keys from aistudio.google.com</p>
                     </div>
                   )}
                 </div>
 
                 {/* Groq Option */}
-                <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                  selectedProvider === 'groq' 
-                    ? 'border-green-500 bg-green-500/10' 
+                <div className={`border rounded-lg transition-colors ${
+                  expandedProviders.has('groq')
+                    ? 'border-green-500 bg-green-500/10'
                     : 'border-gray-600 hover:border-gray-500'
-                }`} onClick={() => handleProviderChange('groq')}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <input
-                      type="radio"
-                      checked={selectedProvider === 'groq'}
-                      onChange={() => handleProviderChange('groq')}
-                      className="text-green-500"
-                    />
-                    <label className="text-white font-medium">Groq API Keys</label>
-                    {selectedProvider === 'groq' && <span className="text-green-400 text-xs">ACTIVE</span>}
-                  </div>
-                  {selectedProvider === 'groq' && (
-                    <div className="space-y-3">
+                }`}>
+                  <button
+                    onClick={() => toggleProviderExpanded('groq')}
+                    className="w-full p-4 flex items-center gap-3 justify-between text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <label className="text-white font-medium cursor-pointer">Groq API Keys</label>
+                      {getActiveKeys('groq').length > 0 && (
+                        <span className="text-green-400 text-xs bg-green-500/20 px-2 py-1 rounded">
+                          {getActiveKeys('groq').length} key(s)
+                        </span>
+                      )}
+                    </div>
+                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${expandedProviders.has('groq') ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </button>
+                  {expandedProviders.has('groq') && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-green-500/20">
                       {renderKeyInputs('groq', 'gsk_...', 'green')}
-                      <p className="text-gray-400 text-sm">Get your API keys from Groq Console</p>
+                      <p className="text-gray-400 text-sm">Get your API keys from console.groq.com</p>
                     </div>
                   )}
                 </div>
@@ -325,9 +385,9 @@ const ApiKeyDialog = ({ isOpen, onClose }: ApiKeyDialogProps) => {
               <Button
                 onClick={handleSave}
                 className="flex-1 bg-white text-black hover:bg-gray-200"
-                disabled={getActiveKeys().length === 0}
+                disabled={!hasAnyActiveKeys()}
               >
-                Save API Keys ({getActiveKeys().length})
+                Save API Keys ({getActiveKeys()})
               </Button>
               <Button
                 onClick={handleClear}
