@@ -3,7 +3,7 @@ import { Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { IconToggle } from '@/components/ui/icon-toggle';
-import { format, isWithinInterval, addMonths, subMonths, addDays, isToday } from 'date-fns';
+import { format, isWithinInterval, addMonths, isBefore, isAfter, isEqual } from 'date-fns';
 
 interface InlineDateFilterProps {
   isActive: boolean;
@@ -19,13 +19,36 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
   onSelect
 }) => {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [displayDates, setDisplayDates] = useState<Date[]>([]);
 
   useEffect(() => {
     if (selectedDate) {
-      const dates = selectedDate.split(',').map(d => new Date(d.trim()));
+      const dates = selectedDate.split(',').map(d => {
+        const parsed = new Date(d.trim());
+        parsed.setHours(0, 0, 0, 0);
+        return parsed;
+      });
       setSelectedDates(dates);
+
+      if (dates.length >= 2) {
+        const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
+        const minDate = sortedDates[0];
+        const maxDate = sortedDates[sortedDates.length - 1];
+        const rangeDates: Date[] = [];
+
+        let current = new Date(minDate);
+        while (isBefore(current, maxDate) || isEqual(current, maxDate)) {
+          rangeDates.push(new Date(current));
+          current.setDate(current.getDate() + 1);
+        }
+
+        setDisplayDates(rangeDates);
+      } else {
+        setDisplayDates(dates);
+      }
     } else {
       setSelectedDates([]);
+      setDisplayDates([]);
     }
   }, [selectedDate]);
 
@@ -81,6 +104,10 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
     return selectedDates.some(d => format(d, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
   };
 
+  const isDateInRangeDisplay = (date: Date): boolean => {
+    return displayDates.some(d => format(d, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -97,7 +124,7 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
           <div className="flex justify-center scale-90 origin-top -my-2">
             <CalendarComponent
               mode="multiple"
-              selected={selectedDates}
+              selected={displayDates}
               onSelect={handleDateSelect}
               disabled={(date) => !isDateInRange(date)}
               className="rounded-[8px]"
