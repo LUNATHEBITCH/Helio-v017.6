@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Flag } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -107,7 +107,7 @@ const PriorityFilterPopover: React.FC<PriorityFilterPopoverProps> = ({ selectedP
                       selectedPriorities.includes(priority.name) && "bg-[#2e2e2e] text-white"
                     )}
                   >
-                    <div className={cn("w-2 h-2 rounded-full mr-2", priority.color)}></div>
+                    <Flag className={cn("w-3 h-3 mr-2 flex-shrink-0", priority.color)} />
                     <span className="flex-1">{priority.name}</span>
                     {selectedPriorities.includes(priority.name) && (
                       <span className="text-green-400">✓</span>
@@ -135,7 +135,7 @@ const PriorityFilterPopover: React.FC<PriorityFilterPopoverProps> = ({ selectedP
                       selectedPriorities.includes(priority.name) && "bg-[#2e2e2e] text-white"
                     )}
                   >
-                    <div className={cn("w-2 h-2 rounded-full mr-2", priority.color)}></div>
+                    <Flag className={cn("w-3 h-3 mr-2 flex-shrink-0", priority.color)} />
                     <span className="flex-1">{priority.name}</span>
                     {selectedPriorities.includes(priority.name) && (
                       <span className="text-green-400">✓</span>

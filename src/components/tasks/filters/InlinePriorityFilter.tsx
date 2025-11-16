@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconToggle } from '@/components/ui/icon-toggle';
 import { cn } from '@/lib/utils';
@@ -106,7 +106,7 @@ const InlinePriorityFilter: React.FC<InlinePriorityFilterProps> = ({
                       selectedPriorities.includes(priority.name) && 'bg-[#2e2e2e] text-white'
                     )}
                   >
-                    <div className={cn('w-3 h-3 rounded-full mr-2 flex-shrink-0', priority.color)}></div>
+                    <Flag className={cn('w-3 h-3 mr-2 flex-shrink-0', priority.color)} />
                     <span className="flex-1">{priority.name}</span>
                     {selectedPriorities.includes(priority.name) && (
                       <span className="text-green-400">✓</span>
@@ -133,7 +133,7 @@ const InlinePriorityFilter: React.FC<InlinePriorityFilterProps> = ({
                       selectedPriorities.includes(priority.name) && 'bg-[#2e2e2e] text-white'
                     )}
                   >
-                    <div className={cn('w-3 h-3 rounded-full mr-2 flex-shrink-0', priority.color)}></div>
+                    <Flag className={cn('w-3 h-3 mr-2 flex-shrink-0', priority.color)} />
                     <span className="flex-1">{priority.name}</span>
                     {selectedPriorities.includes(priority.name) && (
                       <span className="text-green-400">✓</span>
