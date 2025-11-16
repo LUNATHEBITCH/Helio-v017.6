@@ -35,11 +35,12 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const oneMonthAhead = addMonths(today, 1);
-  const oneMonthAgo = subMonths(today, 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const oneMonthAhead = addMonths(tomorrow, 1);
 
   const isDateInRange = (date: Date): boolean => {
-    return isWithinInterval(date, { start: oneMonthAgo, end: oneMonthAhead }) && !isToday(date);
+    return isWithinInterval(date, { start: tomorrow, end: oneMonthAhead });
   };
 
   const handleDateSelect = (date: Date | undefined) => {
