@@ -46,27 +46,29 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
 
-    const dateString = format(date, 'yyyy-MM-dd');
+    const dateToSelect = new Date(date);
+    dateToSelect.setHours(0, 0, 0, 0);
+    const dateString = format(dateToSelect, 'yyyy-MM-dd');
 
-    if (!isDateInRange(date)) return;
+    if (!isDateInRange(dateToSelect)) return;
 
     setSelectedDates(prev => {
       const dateExists = prev.some(d => format(d, 'yyyy-MM-dd') === dateString);
 
+      let updated: Date[];
       if (dateExists) {
-        const updated = prev.filter(d => format(d, 'yyyy-MM-dd') !== dateString);
-        const dateStrings = updated.map(d => format(d, 'yyyy-MM-dd')).join(',');
-        onSelect(dateStrings);
-        return updated;
+        updated = prev.filter(d => format(d, 'yyyy-MM-dd') !== dateString);
       } else {
         if (prev.length < 5) {
-          const updated = [...prev, date];
-          const dateStrings = updated.map(d => format(d, 'yyyy-MM-dd')).join(',');
-          onSelect(dateStrings);
-          return updated;
+          updated = [...prev, dateToSelect];
+        } else {
+          return prev;
         }
-        return prev;
       }
+
+      const dateStrings = updated.map(d => format(d, 'yyyy-MM-dd')).join(',');
+      onSelect(dateStrings);
+      return updated;
     });
   };
 
