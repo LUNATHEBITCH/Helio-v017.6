@@ -291,7 +291,14 @@ const Tasks = () => {
     let filtered = [...tasksToFilter];
 
     if (filterSettings.date && filterValues.date) {
-      filtered = filtered.filter(task => task.dueDate === filterValues.date);
+      const selectedDates = filterValues.date.split(',').map((d: string) => d.trim());
+      filtered = filtered.filter(task =>
+        task.dueDate && selectedDates.some(date => {
+          const taskDate = new Date(task.dueDate).toLocaleDateString();
+          const filterDate = new Date(date).toLocaleDateString();
+          return taskDate === filterDate;
+        })
+      );
     }
 
     if (filterSettings.priority && filterValues.priorities && filterValues.priorities.length > 0) {
