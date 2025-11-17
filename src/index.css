@@ -251,3 +251,25 @@
 [data-state="delayed-open"][data-radix-tooltip-content] {
   animation-duration: 100ms !important;
 }
+
+/* Date range "train" styling */
+.rdp-day_range_start:not([disabled]),
+.rdp-day_range_end:not([disabled]) {
+  background-color: white !important;
+  color: black !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+.rdp-day_range_middle:not([disabled]) {
+  background-color: #414141 !important;
+  color: #a3a3a3 !important;
+  border-radius: 0px !important;
+  margin: 0px !important;
+}
+
+.rdp-row:has(.rdp-day_range_start),
+.rdp-row:has(.rdp-day_range_end),
+.rdp-row:has(.rdp-day_range_middle) {
+  gap: 2px;
+}
