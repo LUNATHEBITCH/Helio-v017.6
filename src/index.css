@@ -258,6 +258,8 @@
   color: black !important;
   border-radius: 6px 0 0 6px !important;
   font-weight: 500 !important;
+  margin-right: -4.5px !important;
+  z-index: 1 !important;
 }
 
 .rdp-day_range_end:not([disabled]) {
@@ -265,13 +267,16 @@
   color: black !important;
   border-radius: 0 6px 6px 0 !important;
   font-weight: 500 !important;
+  margin-left: -4.5px !important;
+  z-index: 1 !important;
 }
 
 .rdp-day_range_middle:not([disabled]) {
   background-color: #414141 !important;
   color: #a3a3a3 !important;
   border-radius: 0px !important;
-  margin: 0px !important;
+  margin: 0 -4.5px !important;
+  z-index: 0 !important;
 }
 
 .rdp-row:has(.rdp-day_range_start),

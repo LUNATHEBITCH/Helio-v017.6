@@ -33,10 +33,11 @@ function Calendar({
         head_cell:
           "text-gray-500 rounded-md w-9 font-normal text-[0.7rem] uppercase",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+        cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20 [&:has(.rdp-day_range_middle)]:p-0 [&:has(.rdp-day_range_start)]:p-0 [&:has(.rdp-day_range_end)]:p-0",
         day: cn(
-          "h-9 w-9 p-0 font-normal text-gray-300 rounded-md transition-all aria-selected:opacity-100 [&:not(.rdp-day_selected)]:hover:bg-[#2e2e2e] [&:not(.rdp-day_selected)]:hover:text-white"
+          "h-9 w-9 p-0 font-normal text-gray-300 transition-all aria-selected:opacity-100 [&:not(.rdp-day_selected)]:hover:bg-[#2e2e2e] [&:not(.rdp-day_selected)]:hover:text-white [&:not(.rdp-day_range_start):not(.rdp-day_range_middle):not(.rdp-day_range_end)]:rounded-md"
         ),
+        day_range_start: "day-range-start",
         day_range_end: "day-range-end",
         day_selected:
           "bg-white text-black hover:bg-gray-100 hover:text-black focus:bg-white focus:text-black font-medium rounded-md",
