@@ -253,11 +253,17 @@
 }
 
 /* Date range "train" styling */
-.rdp-day_range_start:not([disabled]),
+.rdp-day_range_start:not([disabled]) {
+  background-color: white !important;
+  color: black !important;
+  border-radius: 6px 0 0 6px !important;
+  font-weight: 500 !important;
+}
+
 .rdp-day_range_end:not([disabled]) {
   background-color: white !important;
   color: black !important;
-  border-radius: 6px !important;
+  border-radius: 0 6px 6px 0 !important;
   font-weight: 500 !important;
 }
 
@@ -271,5 +277,5 @@
 .rdp-row:has(.rdp-day_range_start),
 .rdp-row:has(.rdp-day_range_end),
 .rdp-row:has(.rdp-day_range_middle) {
-  gap: 2px;
+  gap: 0px;
 }
