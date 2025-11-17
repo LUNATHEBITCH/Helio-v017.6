@@ -18,36 +18,38 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
   onToggle,
   onSelect
 }) => {
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [displayDates, setDisplayDates] = useState<Date[]>([]);
 
   useEffect(() => {
     if (selectedDate) {
-      const dates = selectedDate.split(',').map(d => {
+      const parts = selectedDate.split(',').map(d => {
         const parsed = new Date(d.trim());
         parsed.setHours(0, 0, 0, 0);
         return parsed;
       });
-      setSelectedDates(dates);
 
-      if (dates.length >= 2) {
-        const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-        const minDate = sortedDates[0];
-        const maxDate = sortedDates[sortedDates.length - 1];
+      if (parts.length === 1) {
+        setStartDate(parts[0]);
+        setEndDate(parts[0]);
+        setDisplayDates([parts[0]]);
+      } else if (parts.length === 2) {
+        const sorted = parts.sort((a, b) => a.getTime() - b.getTime());
+        setStartDate(sorted[0]);
+        setEndDate(sorted[1]);
+
         const rangeDates: Date[] = [];
-
-        let current = new Date(minDate);
-        while (isBefore(current, maxDate) || isEqual(current, maxDate)) {
+        let current = new Date(sorted[0]);
+        while (isBefore(current, sorted[1]) || isEqual(current, sorted[1])) {
           rangeDates.push(new Date(current));
           current.setDate(current.getDate() + 1);
         }
-
         setDisplayDates(rangeDates);
-      } else {
-        setDisplayDates(dates);
       }
     } else {
-      setSelectedDates([]);
+      setStartDate(undefined);
+      setEndDate(undefined);
       setDisplayDates([]);
     }
   }, [selectedDate]);
@@ -71,42 +73,65 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
 
     const dateToSelect = new Date(date);
     dateToSelect.setHours(0, 0, 0, 0);
-    const dateString = format(dateToSelect, 'yyyy-MM-dd');
 
     if (!isDateInRange(dateToSelect)) return;
 
-    setSelectedDates(prev => {
-      const dateExists = prev.some(d => format(d, 'yyyy-MM-dd') === dateString);
+    if (!startDate) {
+      setStartDate(dateToSelect);
+      setEndDate(dateToSelect);
+      setDisplayDates([dateToSelect]);
+      onSelect(format(dateToSelect, 'yyyy-MM-dd'));
+    } else if (isEqual(dateToSelect, startDate) && isEqual(dateToSelect, endDate)) {
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setDisplayDates([]);
+      onSelect('');
+    } else if (!endDate || isEqual(dateToSelect, endDate)) {
+      setStartDate(dateToSelect);
+      setEndDate(dateToSelect);
+      setDisplayDates([dateToSelect]);
+      onSelect(format(dateToSelect, 'yyyy-MM-dd'));
+    } else {
+      const sorted = dateToSelect.getTime() < startDate.getTime()
+        ? [dateToSelect, startDate]
+        : [startDate, dateToSelect];
 
-      let updated: Date[];
-      if (dateExists) {
-        updated = prev.filter(d => format(d, 'yyyy-MM-dd') !== dateString);
-      } else {
-        if (prev.length < 5) {
-          updated = [...prev, dateToSelect];
-        } else {
-          return prev;
-        }
+      setStartDate(sorted[0]);
+      setEndDate(sorted[1]);
+
+      const rangeDates: Date[] = [];
+      let current = new Date(sorted[0]);
+      while (isBefore(current, sorted[1]) || isEqual(current, sorted[1])) {
+        rangeDates.push(new Date(current));
+        current.setDate(current.getDate() + 1);
       }
-
-      const dateStrings = updated.map(d => format(d, 'yyyy-MM-dd')).join(',');
-      onSelect(dateStrings);
-      return updated;
-    });
+      setDisplayDates(rangeDates);
+      onSelect(`${format(sorted[0], 'yyyy-MM-dd')},${format(sorted[1], 'yyyy-MM-dd')}`);
+    }
   };
 
   const clearDate = () => {
-    setSelectedDates([]);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setDisplayDates([]);
     onSelect('');
   };
 
   const isDateSelected = (date: Date): boolean => {
-    return selectedDates.some(d => format(d, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
+    if (!startDate || !endDate) return false;
+    return isWithinInterval(date, { start: startDate, end: endDate });
   };
 
-  const isDateInRangeDisplay = (date: Date): boolean => {
-    return displayDates.some(d => format(d, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
+  const isStartOrEnd = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const startStr = startDate ? format(startDate, 'yyyy-MM-dd') : '';
+    const endStr = endDate ? format(endDate, 'yyyy-MM-dd') : '';
+    return dateStr === startStr || dateStr === endStr;
   };
+
+  const dateRange = startDate && endDate
+    ? `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd')}`
+    : '';
 
   return (
     <div className="space-y-2">
@@ -123,19 +148,26 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
         <div className="bg-[#252525] border border-[#414141] rounded-[12px] p-3 space-y-2">
           <div className="flex justify-center scale-90 origin-top -my-2">
             <CalendarComponent
-              mode="multiple"
-              selected={displayDates}
-              onSelect={handleDateSelect}
+              mode="range"
+              selected={{ from: startDate, to: endDate }}
+              onSelect={(range: any) => {
+                if (range?.from) {
+                  handleDateSelect(range.from);
+                  if (range?.to && !isEqual(range.from, range.to)) {
+                    handleDateSelect(range.to);
+                  }
+                }
+              }}
               disabled={(date) => !isDateInRange(date)}
               className="rounded-[8px]"
             />
           </div>
 
           <div className="text-xs text-gray-400 text-center">
-            {selectedDates.length > 0 ? `${selectedDates.length}/5 dates selected` : 'Select up to 5 dates'}
+            {dateRange ? dateRange : 'Select a date range'}
           </div>
 
-          {selectedDates.length > 0 && (
+          {startDate && endDate && (
             <Button
               onClick={clearDate}
               variant="ghost"

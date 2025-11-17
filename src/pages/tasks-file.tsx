@@ -291,14 +291,30 @@ const Tasks = () => {
     let filtered = [...tasksToFilter];
 
     if (filterSettings.date && filterValues.date) {
-      const selectedDates = filterValues.date.split(',').map((d: string) => d.trim());
-      filtered = filtered.filter(task =>
-        task.dueDate && selectedDates.some(date => {
-          const taskDate = new Date(task.dueDate).toLocaleDateString();
-          const filterDate = new Date(date).toLocaleDateString();
-          return taskDate === filterDate;
-        })
-      );
+      const dateParts = filterValues.date.split(',').map((d: string) => d.trim());
+
+      if (dateParts.length === 1) {
+        const selectedDate = new Date(dateParts[0]);
+        selectedDate.setHours(0, 0, 0, 0);
+        filtered = filtered.filter(task => {
+          if (!task.dueDate) return false;
+          const taskDate = new Date(task.dueDate);
+          taskDate.setHours(0, 0, 0, 0);
+          return taskDate.getTime() === selectedDate.getTime();
+        });
+      } else if (dateParts.length === 2) {
+        const startDate = new Date(dateParts[0]);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(dateParts[1]);
+        endDate.setHours(23, 59, 59, 999);
+
+        filtered = filtered.filter(task => {
+          if (!task.dueDate) return false;
+          const taskDate = new Date(task.dueDate);
+          taskDate.setHours(0, 0, 0, 0);
+          return taskDate.getTime() >= startDate.getTime() && taskDate.getTime() <= endDate.getTime();
+        });
+      }
     }
 
     if (filterSettings.priority && filterValues.priorities && filterValues.priorities.length > 0) {
