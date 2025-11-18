@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { type DateRange } from 'react-day-picker';
 import { Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { IconToggle } from '@/components/ui/icon-toggle';
-import { format, isWithinInterval, addMonths, isBefore, isAfter, isEqual } from 'date-fns';
+import { format, isWithinInterval, addMonths } from 'date-fns';
 
 interface InlineDateFilterProps {
   isActive: boolean;
@@ -18,9 +19,7 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
   onToggle,
   onSelect
 }) => {
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [displayDates, setDisplayDates] = useState<Date[]>([]);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     if (selectedDate) {
@@ -31,26 +30,13 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
       });
 
       if (parts.length === 1) {
-        setStartDate(parts[0]);
-        setEndDate(parts[0]);
-        setDisplayDates([parts[0]]);
+        setDateRange({ from: parts[0], to: parts[0] });
       } else if (parts.length === 2) {
         const sorted = parts.sort((a, b) => a.getTime() - b.getTime());
-        setStartDate(sorted[0]);
-        setEndDate(sorted[1]);
-
-        const rangeDates: Date[] = [];
-        let current = new Date(sorted[0]);
-        while (isBefore(current, sorted[1]) || isEqual(current, sorted[1])) {
-          rangeDates.push(new Date(current));
-          current.setDate(current.getDate() + 1);
-        }
-        setDisplayDates(rangeDates);
+        setDateRange({ from: sorted[0], to: sorted[1] });
       }
     } else {
-      setStartDate(undefined);
-      setEndDate(undefined);
-      setDisplayDates([]);
+      setDateRange(undefined);
     }
   }, [selectedDate]);
 
@@ -66,69 +52,43 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
     return isWithinInterval(date, { start: today, end: oneMonthAhead });
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
-
-    const dateToSelect = new Date(date);
-    dateToSelect.setHours(0, 0, 0, 0);
-
-    if (!isDateInRange(dateToSelect)) return;
-
-    if (!startDate) {
-      setStartDate(dateToSelect);
-      setEndDate(dateToSelect);
-      setDisplayDates([dateToSelect]);
-      onSelect(format(dateToSelect, 'yyyy-MM-dd'));
-    } else if (isEqual(dateToSelect, startDate) && isEqual(dateToSelect, endDate)) {
-      setStartDate(undefined);
-      setEndDate(undefined);
-      setDisplayDates([]);
+  const handleDateSelect = (range: DateRange | undefined) => {
+    if (!range?.from) {
+      setDateRange(undefined);
       onSelect('');
-    } else if (!endDate || isEqual(dateToSelect, endDate)) {
-      setStartDate(dateToSelect);
-      setEndDate(dateToSelect);
-      setDisplayDates([dateToSelect]);
-      onSelect(format(dateToSelect, 'yyyy-MM-dd'));
+      return;
+    }
+
+    const from = new Date(range.from);
+    from.setHours(0, 0, 0, 0);
+
+    if (!isDateInRange(from)) return;
+
+    if (!range.to) {
+      setDateRange({ from, to: from });
+      onSelect(format(from, 'yyyy-MM-dd'));
     } else {
-      const sorted = dateToSelect.getTime() < startDate.getTime()
-        ? [dateToSelect, startDate]
-        : [startDate, dateToSelect];
+      const to = new Date(range.to);
+      to.setHours(0, 0, 0, 0);
 
-      setStartDate(sorted[0]);
-      setEndDate(sorted[1]);
+      if (!isDateInRange(to)) return;
 
-      const rangeDates: Date[] = [];
-      let current = new Date(sorted[0]);
-      while (isBefore(current, sorted[1]) || isEqual(current, sorted[1])) {
-        rangeDates.push(new Date(current));
-        current.setDate(current.getDate() + 1);
-      }
-      setDisplayDates(rangeDates);
-      onSelect(`${format(sorted[0], 'yyyy-MM-dd')},${format(sorted[1], 'yyyy-MM-dd')}`);
+      const sorted = from.getTime() <= to.getTime()
+        ? { from, to }
+        : { from: to, to: from };
+
+      setDateRange(sorted);
+      onSelect(`${format(sorted.from, 'yyyy-MM-dd')},${format(sorted.to, 'yyyy-MM-dd')}`);
     }
   };
 
   const clearDate = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setDisplayDates([]);
+    setDateRange(undefined);
     onSelect('');
   };
 
-  const isDateSelected = (date: Date): boolean => {
-    if (!startDate || !endDate) return false;
-    return isWithinInterval(date, { start: startDate, end: endDate });
-  };
-
-  const isStartOrEnd = (date: Date): boolean => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const startStr = startDate ? format(startDate, 'yyyy-MM-dd') : '';
-    const endStr = endDate ? format(endDate, 'yyyy-MM-dd') : '';
-    return dateStr === startStr || dateStr === endStr;
-  };
-
-  const dateRange = startDate && endDate
-    ? `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd')}`
+  const dateRangeText = dateRange?.from && dateRange?.to
+    ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd')}`
     : '';
 
   return (
@@ -144,28 +104,22 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
 
       {isActive && (
         <div className="bg-[#252525] border border-[#414141] rounded-[12px] p-3 space-y-2">
-          <div className="flex justify-center scale-90 origin-top -my-2">
+          <div className="flex justify-center">
             <CalendarComponent
               mode="range"
-              selected={{ from: startDate, to: endDate }}
-              onSelect={(range: any) => {
-                if (range?.from) {
-                  handleDateSelect(range.from);
-                  if (range?.to && !isEqual(range.from, range.to)) {
-                    handleDateSelect(range.to);
-                  }
-                }
-              }}
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={handleDateSelect}
               disabled={(date) => !isDateInRange(date)}
               className="rounded-[8px]"
             />
           </div>
 
           <div className="text-xs text-gray-400 text-center">
-            {dateRange ? dateRange : 'Select a date range'}
+            {dateRangeText ? dateRangeText : 'Select a date range'}
           </div>
 
-          {startDate && endDate && (
+          {dateRange?.from && dateRange?.to && (
             <Button
               onClick={clearDate}
               variant="ghost"
