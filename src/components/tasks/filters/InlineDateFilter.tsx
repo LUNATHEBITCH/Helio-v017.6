@@ -111,6 +111,7 @@ const InlineDateFilter: React.FC<InlineDateFilterProps> = ({
               selected={dateRange}
               onSelect={handleDateSelect}
               disabled={(date) => !isDateInRange(date)}
+              numberOfMonths={2}
               className="rounded-[8px]"
             />
           </div>
