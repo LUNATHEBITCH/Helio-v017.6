@@ -274,7 +274,6 @@
 .rdp-day_range_middle:not([disabled]) {
   background-color: #414141 !important;
   color: #a3a3a3 !important;
-  border-radius: 0px !important;
   margin: 0 -4.5px !important;
   z-index: 0 !important;
 }
