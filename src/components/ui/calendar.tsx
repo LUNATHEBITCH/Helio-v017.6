@@ -33,12 +33,12 @@ function Calendar({
         head_cell:
           "text-gray-500 rounded-md w-9 font-normal text-[0.7rem] uppercase",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+        cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20 [&:has(.rdp-day_range_middle)]:p-0 [&:has(.rdp-day_range_start)]:p-0 [&:has(.rdp-day_range_end)]:p-0",
         day: cn(
           "h-9 w-9 p-0 font-normal text-gray-300 transition-all aria-selected:opacity-100 [&:not(.rdp-day_selected)]:hover:bg-[#2e2e2e] [&:not(.rdp-day_selected)]:hover:text-white [&:not(.rdp-day_range_start):not(.rdp-day_range_middle):not(.rdp-day_range_end)]:rounded-md"
         ),
-        day_range_start: "bg-[#414141] text-gray-400 rounded-l-md",
-        day_range_end: "bg-[#414141] text-gray-400 rounded-r-md",
+        day_range_start: "day-range-start",
+        day_range_end: "day-range-end",
         day_selected:
           "bg-white text-black hover:bg-gray-100 hover:text-black focus:bg-white focus:text-black font-medium rounded-md",
         day_today: "bg-[#2e2e2e] text-white font-medium rounded-md aria-selected:!bg-white aria-selected:!text-black",
@@ -46,7 +46,7 @@ function Calendar({
           "day-outside text-gray-600 opacity-50 aria-selected:bg-[#414141] aria-selected:text-gray-400 aria-selected:opacity-100",
         day_disabled: "text-gray-600 opacity-30",
         day_range_middle:
-          "bg-[#414141] text-gray-400",
+          "aria-selected:bg-[#414141] aria-selected:text-gray-400",
         day_hidden: "invisible",
         ...classNames,
       }}
